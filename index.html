@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex"><title>3 Clips</title>
+<style>
+body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px;background:#f1ebdd;color:#121110;
+  font:17px/1.45 -apple-system,"Helvetica Neue",Arial,sans-serif;text-align:center}
+h1{font:900 56px/1 Impact,"Arial Black",sans-serif;text-transform:uppercase;margin:0 0 12px}
+h1 mark{background:#ffe500;color:#121110;padding:0 .08em}
+p{margin:0;color:#3d3a35}
+</style></head>
+<body><div><h1>3 <mark>Clips</mark></h1><p id="m">Opening…</p></div>
+<script>
+// Sends you to wherever 3 Clips is running right now. The address changes
+// whenever the laptop wakes up; link.txt in this repo always has the current one.
+fetch('https://api.github.com/repos/hamza12dawamenah-rgb/3clips-go/contents/link.txt', { cache: 'no-store' })
+  .then((r) => r.json())
+  .then((j) => {
+    const url = atob(j.content).trim();
+    if (!/^https:\/\/[a-z0-9-]+\.trycloudflare\.com$/.test(url)) throw new Error('no link');
+    location.replace(url);
+  })
+  .catch(() => { document.getElementById('m').textContent = 'Couldn’t open it. Try again in a minute.'; });
+</script></body></html>
