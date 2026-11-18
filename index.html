@@ -11,14 +11,36 @@ p{margin:0;color:#3d3a35}
 </style></head>
 <body><div><h1>3 <mark>Clips</mark></h1><p id="m">Opening…</p></div>
 <script>
-// Sends you to wherever 3 Clips is running right now. The address changes
-// whenever the laptop wakes up; link.txt in this repo always has the current one.
-fetch('https://api.github.com/repos/hamza12dawamenah-rgb/3clips-go/contents/link.txt', { cache: 'no-store' })
-  .then((r) => r.json())
-  .then((j) => {
-    const url = atob(j.content).trim();
-    if (!/^https:\/\/[a-z0-9-]+\.trycloudflare\.com$/.test(url)) throw new Error('no link');
-    location.replace(url);
-  })
-  .catch(() => { document.getElementById('m').textContent = 'Couldn’t open it. Try again in a minute.'; });
+// Sends you to wherever 3 Clips is running right now. The address changes when
+// the laptop wakes up; link.txt in this repo always has the current one. The
+// site is asked first (/ping), so if the laptop is still reconnecting you wait
+// here instead of landing on a Cloudflare error.
+const msg = (t) => { document.getElementById('m').textContent = t; };
+const API = 'https://api.github.com/repos/hamza12dawamenah-rgb/3clips-go/contents/link.txt';
+let link = null, lastRead = 0, tries = 0;
+
+async function readLink() {
+  const j = await (await fetch(API + '?t=' + Date.now(), { cache: 'no-store' })).json();
+  const u = atob(j.content).trim();
+  if (!/^https:\/\/[a-z0-9-]+\.trycloudflare\.com$/.test(u)) throw new Error('no link');
+  link = u; lastRead = Date.now();
+}
+async function alive(u) {
+  const c = new AbortController(); const t = setTimeout(() => c.abort(), 6000);
+  try { const r = await fetch(u + '/ping', { cache: 'no-store', signal: c.signal }); return r.ok; }
+  catch { return false; } finally { clearTimeout(t); }
+}
+async function go() {
+  tries++;
+  try {
+    // The address only changes when the laptop reconnects, so re-read it every 15s, not every try.
+    if (!link || Date.now() - lastRead > 15000) await readLink();
+    if (await alive(link)) { msg('Opening…'); location.replace(link); return; }
+  } catch { /* GitHub or the laptop not reachable yet */ }
+  msg(tries < 40
+    ? 'Starting up… the laptop just woke up. This opens by itself in a moment.'
+    : 'The laptop looks off or asleep right now. Leave this open and it will open when it’s back.');
+  setTimeout(go, 3000);
+}
+go();
 </script></body></html>
